@@ -10,7 +10,7 @@ import modelo.Usuario;
 import util.ConexionDB;
 /**
  *
- * @author USER
+ * @author Emesis
  */
 public class UsuarioDAO {
     public List<Usuario> listar() throws SQLException {
