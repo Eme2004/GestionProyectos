@@ -6,44 +6,48 @@ package util;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
 /**
- *
- * @author Emesis
+ * Clase encargada de establecer la conexión con la base de datos PostgreSQL
+ * Conecta a la base de datos correcta: gestionproyectos
  */
-// Clase encargada de establecer la conexión con la base de datos PostgreSQL
-
 public class ConexionDB {
+
+    // URL de conexión al servidor PostgreSQL
+    // Nombre de la base de datos: gestionproyectos (sin espacios)
     private static final String URL = "jdbc:postgresql://localhost:5432/gestionproyectos";
-    private static final String USUARIO = "postgres"; 
-    private static final String CONTRASENA = "eme12"; 
 
-    static {
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("No se encontró el driver de PostgreSQL", e);
-        }
-    }
+    // Nombre de usuario de la base de datos
+    private static final String USUARIO = "postgres";  
 
-    public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USUARIO, CONTRASENA);
-    }
+    // Contraseña del usuario
+    private static final String CONTRASENA = "eme12";  
+
+    /**
+     * Método estático que intenta establecer una conexión con la base de datos PostgreSQL.
+     *
+     * @return Objeto Connection si la conexión es exitosa, o null si ocurre un error.
+     */
     public static Connection conectar() {
         try {
-            // Intenta crear una conexión utilizando los datos especificados
+            // Cargar explícitamente el driver de PostgreSQL
+            Class.forName("org.postgresql.Driver");
+
+            // Intenta crear la conexión
             Connection conn = DriverManager.getConnection(URL, USUARIO, CONTRASENA);
 
-            // Mensaje de confirmación en consola si la conexión es exitosa
-            System.out.println(" Conexión exitosa a PostgreSQL");
+            // Mensaje de éxito
+            System.out.println("✅ Conexión exitosa a la base de datos: " + conn.getCatalog());
 
-            // Devuelve el objeto Connection para su uso posterior
             return conn;
 
+        } catch (ClassNotFoundException e) {
+            System.err.println("❌ Driver de PostgreSQL no encontrado. ¿Agregaste el JAR?");
+            e.printStackTrace();
+            return null;
         } catch (SQLException e) {
-            // Si ocurre un error al intentar conectarse, se imprime el mensaje en consola
-            System.out.println(" Error de conexión: " + e.getMessage());
-
-            // Devuelve null indicando que no se pudo establecer la conexión
+            System.err.println("❌ Error de conexión a 'gestionproyectos': " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }

@@ -3,68 +3,101 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package dao;
+import modelo.Usuario;
+import util.ConexionDB; // ← Asegúrate de que la clase esté en el paquete 'util'
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import modelo.Usuario;
-import util.ConexionDB;
 /**
- *
- * @author Emesis
+ * Clase DAO para gestionar operaciones CRUD de Usuario en la base de datos.
  */
 public class UsuarioDAO {
-    public List<Usuario> listar() throws SQLException {
-        List<Usuario> usuarios = new ArrayList<>();
-        String sql = "SELECT id, nombre, email, rol FROM usuario ORDER BY nombre";
 
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+    /**
+     * Guarda un nuevo usuario en la base de datos.
+     */
+    public void guardar(Usuario usuario) throws SQLException {
+        String sql = "INSERT INTO usuario (nombre, email, rol) VALUES (?, ?, ?)";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setString(1, usuario.getNombre());
+            pstmt.setString(2, usuario.getEmail());
+            pstmt.setString(3, usuario.getRol());
+
+            pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    usuario.setId(rs.getInt(1));
+                }
+            }
+        }
+    }
+
+    /**
+     * Obtiene un usuario por su ID.
+     */
+    public Usuario obtenerPorId(int id) throws SQLException {
+        String sql = "SELECT * FROM usuario WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapearUsuario(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Obtiene todos los usuarios de la base de datos.
+     */
+    public List<Usuario> obtenerTodos() throws SQLException {
+        String sql = "SELECT * FROM usuario";
+        List<Usuario> usuarios = new ArrayList<>();
+
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
-                Usuario u = new Usuario();
-                u.setId(rs.getInt("id"));
-                u.setNombre(rs.getString("nombre"));
-                u.setEmail(rs.getString("email"));
-                u.setRol(rs.getString("rol"));
-                usuarios.add(u);
+                usuarios.add(mapearUsuario(rs));
             }
         }
         return usuarios;
     }
 
-    public void insertar(Usuario usuario) throws SQLException {
-        String sql = "INSERT INTO usuario(nombre, email, rol) VALUES (?, ?, ?)";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, usuario.getNombre());
-            stmt.setString(2, usuario.getEmail());
-            stmt.setString(3, usuario.getRol());
-            stmt.executeUpdate();
-        }
-    }
-
-    public void actualizar(Usuario usuario) throws SQLException {
-        String sql = "UPDATE usuario SET nombre=?, email=?, rol=? WHERE id=?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, usuario.getNombre());
-            stmt.setString(2, usuario.getEmail());
-            stmt.setString(3, usuario.getRol());
-            stmt.setInt(4, usuario.getId());
-            stmt.executeUpdate();
-        }
-    }
-
-    public void eliminar(int id) throws SQLException {
-        String sql = "DELETE FROM usuario WHERE id=?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-            stmt.executeUpdate();
-        }
+    /**
+     * Mapea un ResultSet a un objeto Usuario.
+     */
+    private Usuario mapearUsuario(ResultSet rs) throws SQLException {
+        Usuario usuario = new Usuario();
+        usuario.setId(rs.getInt("id"));
+        usuario.setNombre(rs.getString("nombre"));
+        usuario.setEmail(rs.getString("email"));
+        usuario.setRol(rs.getString("rol"));
+        return usuario;
     }
 }

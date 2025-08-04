@@ -3,78 +3,133 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package dao;
+import modelo.Recurso;
+import util.ConexionDB;
+
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import modelo.Recursos;
-import util.ConexionDB;
-import util.LogErrorDAO;
-/**
- *
- * @author USER
- */
 
-/**
- * Clase DAO para gestionar recursos asociados a tareas.
- */
 public class RecursoDAO {
-    public List<Recursos> listarPorTarea(int idTarea) throws SQLException {
-        List<Recursos> recursos = new ArrayList<>();
-        String sql = "SELECT id, nombre_archivo, ruta, id_tarea, tipo, fecha_subida FROM recurso WHERE id_tarea = ?";
 
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+    public void guardar(Recurso recurso) throws SQLException {
+        String sql = "INSERT INTO recurso (nombre_archivo, ruta, id_tarea, tipo, fecha_subida) VALUES (?, ?, ?, ?, ?)";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
 
-            stmt.setInt(1, idTarea);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Recursos r = new Recursos();
-                    r.setId(rs.getInt("id"));
-                    r.setNombreArchivo(rs.getString("nombre_archivo"));
-                    r.setRuta(rs.getString("ruta"));
-                    r.setIdTarea(rs.getInt("id_tarea"));
-                    r.setTipo(rs.getString("tipo"));
-                    r.setFechaSubida(rs.getDate("fecha_subida"));
-                    recursos.add(r);
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setString(1, recurso.getNombreArchivo());
+            pstmt.setString(2, recurso.getRuta());
+            if (recurso.getIdTarea() != null) {
+                pstmt.setInt(3, recurso.getIdTarea());
+            } else {
+                pstmt.setNull(3, Types.INTEGER);
+            }
+            pstmt.setString(4, recurso.getTipo());
+            pstmt.setObject(5, recurso.getFechaSubida());
+
+            pstmt.executeUpdate();
+
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    recurso.setId(rs.getInt(1));
                 }
             }
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("RecursoDAO", "listarPorTarea", e.getMessage());
-            throw e;
+        }
+    }
+
+    public Recurso obtenerPorId(int id) throws SQLException {
+        String sql = "SELECT * FROM recurso WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapearRecurso(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<Recurso> obtenerPorTarea(int idTarea) throws SQLException {
+        String sql = "SELECT * FROM recurso WHERE id_tarea = ?";
+        List<Recurso> recursos = new ArrayList<>();
+
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, idTarea);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    recursos.add(mapearRecurso(rs));
+                }
+            }
         }
         return recursos;
     }
 
-    public void insertar(Recursos recurso) throws SQLException {
-        String sql = "INSERT INTO recurso(nombre_archivo, ruta, id_tarea, tipo, fecha_subida) VALUES (?, ?, ?, ?, ?)";
-
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, recurso.getNombreArchivo());
-            stmt.setString(2, recurso.getRuta());
-            stmt.setInt(3, recurso.getIdTarea());
-            stmt.setString(4, recurso.getTipo());
-            stmt.setDate(5, new java.sql.Date(recurso.getFechaSubida().getTime()));
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("RecursoDAO", "insertar", e.getMessage());
-            throw e;
-        }
-    }
-
     public void eliminar(int id) throws SQLException {
-        String sql = "DELETE FROM recurso WHERE id=?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        String sql = "DELETE FROM recurso WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
 
-            stmt.setInt(1, id);
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("RecursoDAO", "eliminar", e.getMessage());
-            throw e;
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
         }
     }
+
+    private Recurso mapearRecurso(ResultSet rs) throws SQLException {
+        Recurso recurso = new Recurso();
+        recurso.setId(rs.getInt("id"));
+        recurso.setNombreArchivo(rs.getString("nombre_archivo"));
+        recurso.setRuta(rs.getString("ruta"));
+        recurso.setIdTarea(rs.getObject("id_tarea", Integer.class));
+        recurso.setTipo(rs.getString("tipo"));
+        recurso.setFechaSubida(rs.getObject("fecha_subida", LocalDate.class));
+        return recurso;
+    }
+     public List<Recurso> obtenerTodos() throws SQLException {
+        String sql = "SELECT * FROM recurso";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            List<Recurso> recursos = new ArrayList<>();
+            while (rs.next()) {
+                recursos.add(mapearRecurso(rs));
+            }
+            return recursos;
+        }
+    }
+     
 }

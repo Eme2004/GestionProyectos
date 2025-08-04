@@ -3,11 +3,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package modelo;
+import java.time.LocalDate;
 
-/**
- *
- * @author USER
- */
 public class Usuario {
     private int id;
     private String nombre;
@@ -16,13 +13,13 @@ public class Usuario {
 
     public Usuario() {}
 
-    public Usuario(int id, String nombre, String email, String rol) {
-        this.id = id;
+    public Usuario(String nombre, String email, String rol) {
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
     }
 
+    // Getters y Setters
     public int getId() {
         return id;
     }
@@ -54,10 +51,9 @@ public class Usuario {
     public void setRol(String rol) {
         this.rol = rol;
     }
-    
+
     @Override
     public String toString() {
         return nombre + " (" + rol + ")";
     }
-    
 }

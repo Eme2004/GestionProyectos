@@ -3,23 +3,19 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package modelo;
-import java.util.Date;
-/**
- *
- * @author USER
- */
+import java.time.LocalDate;
+
 public class Proyecto {
     private int id;
     private String nombre;
     private String descripcion;
-    private Date fechaInicio;
-    private Date fechaFin;
-    private String estado;// Activo, Finalizado, Cancelado, En Pausa
+    private LocalDate fechaInicio;
+    private LocalDate fechaFin;
+    private String estado;
 
     public Proyecto() {}
 
-    public Proyecto(int id, String nombre, String descripcion, Date fechaInicio, Date fechaFin, String estado) {
-        this.id = id;
+    public Proyecto(String nombre, String descripcion, LocalDate fechaInicio, LocalDate fechaFin, String estado) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.fechaInicio = fechaInicio;
@@ -27,6 +23,7 @@ public class Proyecto {
         this.estado = estado;
     }
 
+    // Getters y Setters
     public int getId() {
         return id;
     }
@@ -51,19 +48,19 @@ public class Proyecto {
         this.descripcion = descripcion;
     }
 
-    public Date getFechaInicio() {
+    public LocalDate getFechaInicio() {
         return fechaInicio;
     }
 
-    public void setFechaInicio(Date fechaInicio) {
+    public void setFechaInicio(LocalDate fechaInicio) {
         this.fechaInicio = fechaInicio;
     }
 
-    public Date getFechaFin() {
+    public LocalDate getFechaFin() {
         return fechaFin;
     }
 
-    public void setFechaFin(Date fechaFin) {
+    public void setFechaFin(LocalDate fechaFin) {
         this.fechaFin = fechaFin;
     }
 
@@ -74,8 +71,8 @@ public class Proyecto {
     public void setEstado(String estado) {
         this.estado = estado;
     }
-    
-     @Override
+
+    @Override
     public String toString() {
         return nombre + " (" + estado + ")";
     }

@@ -3,115 +3,192 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package dao;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 import modelo.Tarea;
 import util.ConexionDB;
-import util.LogErrorDAO;
-/**
- *
- * @author USER
- */
 
-/**
- * Clase DAO para gestionar operaciones CRUD de Tareas.
- */
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import modelo.Recurso;
+
 public class TareaDAO {
-     public List<Tarea> listar() throws SQLException {
-        List<Tarea> tareas = new ArrayList<>();
-        String sql = "SELECT id, nombre, descripcion, id_proyecto, id_usuario_asignado, " +
-                     "prioridad, estado, fecha_asignacion, fecha_vencimiento, progreso FROM tarea ORDER BY estado, prioridad";
 
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+    public void guardar(Tarea tarea) throws SQLException {
+        String sql = "INSERT INTO tarea (nombre, descripcion, id_proyecto, id_usuario_asignado, prioridad, estado, fecha_asignacion, fecha_vencimiento, progreso) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
 
-            while (rs.next()) {
-                Tarea t = new Tarea();
-                t.setId(rs.getInt("id"));
-                t.setNombre(rs.getString("nombre"));
-                t.setDescripcion(rs.getString("descripcion"));
-                t.setIdProyecto(rs.getInt("id_proyecto"));
-                t.setIdUsuarioAsignado(rs.getObject("id_usuario_asignado") != null ? 
-                                       rs.getInt("id_usuario_asignado") : null);
-                t.setPrioridad(rs.getString("prioridad"));
-                t.setEstado(rs.getString("estado"));
-                t.setFechaAsignacion(rs.getDate("fecha_asignacion"));
-                t.setFechaVencimiento(rs.getDate("fecha_vencimiento"));
-                t.setProgreso(rs.getInt("progreso"));
-                tareas.add(t);
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setString(1, tarea.getNombre());
+            pstmt.setString(2, tarea.getDescripcion());
+            pstmt.setInt(3, tarea.getIdProyecto());
+            if (tarea.getIdUsuarioAsignado() != null) {
+                pstmt.setInt(4, tarea.getIdUsuarioAsignado());
+            } else {
+                pstmt.setNull(4, Types.INTEGER);
             }
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("TareaDAO", "listar", e.getMessage());
-            throw e;
-        }
-        return tareas;
-    }
+            pstmt.setString(5, tarea.getPrioridad());
+            pstmt.setString(6, tarea.getEstado());
+            pstmt.setObject(7, tarea.getFechaAsignacion());
+            if (tarea.getFechaVencimiento() != null) {
+                pstmt.setObject(8, tarea.getFechaVencimiento());
+            } else {
+                pstmt.setNull(8, Types.DATE);
+            }
+            pstmt.setInt(9, tarea.getProgreso());
 
-    public void insertar(Tarea tarea) throws SQLException {
-        String sql = "INSERT INTO tarea(nombre, descripcion, id_proyecto, id_usuario_asignado, " +
-                     "prioridad, estado, fecha_asignacion, fecha_vencimiento, progreso) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            pstmt.executeUpdate();
 
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, tarea.getNombre());
-            stmt.setString(2, tarea.getDescripcion());
-            stmt.setInt(3, tarea.getIdProyecto());
-            stmt.setObject(4, tarea.getIdUsuarioAsignado(), Types.INTEGER);
-            stmt.setString(5, tarea.getPrioridad());
-            stmt.setString(6, tarea.getEstado());
-            stmt.setDate(7, new java.sql.Date(tarea.getFechaAsignacion().getTime()));
-            stmt.setDate(8, tarea.getFechaVencimiento() != null ? 
-                         new java.sql.Date(tarea.getFechaVencimiento().getTime()) : null);
-            stmt.setInt(9, tarea.getProgreso());
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("TareaDAO", "insertar", e.getMessage());
-            throw e;
+            try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    tarea.setId(rs.getInt(1));
+                }
+            }
         }
     }
 
+    public Tarea obtenerPorId(int id) throws SQLException {
+        String sql = "SELECT * FROM tarea WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapearTarea(rs);
+                }
+            }
+        }
+        return null;
+    }
+
+    public List<Tarea> obtenerPorProyecto(int idProyecto) throws SQLException {
+        String sql = "SELECT * FROM tarea WHERE id_proyecto = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, idProyecto);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                List<Tarea> tareas = new ArrayList<>();
+                while (rs.next()) {
+                    tareas.add(mapearTarea(rs));
+                }
+                return tareas;
+            }
+        }
+    }
+    public List<Tarea> obtenerTodos() throws SQLException {
+    String sql = "SELECT * FROM tarea";
+    List<Tarea> tareas = new ArrayList<>();
+
+    Connection conn = ConexionDB.conectar();
+    if (conn == null) {
+        throw new SQLException("No se pudo establecer conexión con la base de datos.");
+    }
+
+    try (conn;
+         PreparedStatement pstmt = conn.prepareStatement(sql);
+         ResultSet rs = pstmt.executeQuery()) {
+
+        while (rs.next()) {
+            Tarea tarea = new Tarea();
+            tarea.setId(rs.getInt("id"));
+            tarea.setNombre(rs.getString("nombre"));
+            tarea.setDescripcion(rs.getString("descripcion"));
+            tarea.setIdProyecto(rs.getInt("id_proyecto"));
+            
+            // Manejar posibles valores nulos en id_usuario_asignado
+            Integer idUsuario = rs.getObject("id_usuario_asignado", Integer.class);
+            tarea.setIdUsuarioAsignado(idUsuario);
+            
+            tarea.setPrioridad(rs.getString("prioridad"));
+            tarea.setEstado(rs.getString("estado"));
+            tarea.setFechaAsignacion(rs.getObject("fecha_asignacion", LocalDate.class));
+            tarea.setFechaVencimiento(rs.getObject("fecha_vencimiento", LocalDate.class));
+            tarea.setProgreso(rs.getInt("progreso"));
+            
+            tareas.add(tarea);
+        }
+    }
+    return tareas;
+}
     public void actualizar(Tarea tarea) throws SQLException {
-        String sql = "UPDATE tarea SET nombre=?, descripcion=?, id_proyecto=?, id_usuario_asignado=?, " +
-                     "prioridad=?, estado=?, fecha_asignacion=?, fecha_vencimiento=?, progreso=? WHERE id=?";
+        String sql = "UPDATE tarea SET nombre = ?, descripcion = ?, id_usuario_asignado = ?, prioridad = ?, estado = ?, fecha_vencimiento = ?, progreso = ? WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
 
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, tarea.getNombre());
-            stmt.setString(2, tarea.getDescripcion());
-            stmt.setInt(3, tarea.getIdProyecto());
-            stmt.setObject(4, tarea.getIdUsuarioAsignado(), Types.INTEGER);
-            stmt.setString(5, tarea.getPrioridad());
-            stmt.setString(6, tarea.getEstado());
-            stmt.setDate(7, new java.sql.Date(tarea.getFechaAsignacion().getTime()));
-            stmt.setDate(8, tarea.getFechaVencimiento() != null ? 
-                         new java.sql.Date(tarea.getFechaVencimiento().getTime()) : null);
-            stmt.setInt(9, tarea.getProgreso());
-            stmt.setInt(10, tarea.getId());
-            stmt.executeUpdate();
+            pstmt.setString(1, tarea.getNombre());
+            pstmt.setString(2, tarea.getDescripcion());
+            if (tarea.getIdUsuarioAsignado() != null) {
+                pstmt.setInt(3, tarea.getIdUsuarioAsignado());
+            } else {
+                pstmt.setNull(3, Types.INTEGER);
+            }
+            pstmt.setString(4, tarea.getPrioridad());
+            pstmt.setString(5, tarea.getEstado());
+            if (tarea.getFechaVencimiento() != null) {
+                pstmt.setObject(6, tarea.getFechaVencimiento());
+            } else {
+                pstmt.setNull(6, Types.DATE);
+            }
+            pstmt.setInt(7, tarea.getProgreso());
+            pstmt.setInt(8, tarea.getId());
 
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("TareaDAO", "actualizar", e.getMessage());
-            throw e;
+            pstmt.executeUpdate();
         }
     }
 
     public void eliminar(int id) throws SQLException {
-        String sql = "DELETE FROM tarea WHERE id=?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setInt(1, id);
-            stmt.executeUpdate();
-
-        } catch (SQLException e) {
-            LogErrorDAO.registrarError("TareaDAO", "eliminar", e.getMessage());
-            throw e;
+        String sql = "DELETE FROM tarea WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
         }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+        }
+    }
+
+    private Tarea mapearTarea(ResultSet rs) throws SQLException {
+        Tarea tarea = new Tarea();
+        tarea.setId(rs.getInt("id"));
+        tarea.setNombre(rs.getString("nombre"));
+        tarea.setDescripcion(rs.getString("descripcion"));
+        tarea.setIdProyecto(rs.getInt("id_proyecto"));
+        tarea.setIdUsuarioAsignado(rs.getObject("id_usuario_asignado", Integer.class));
+        tarea.setPrioridad(rs.getString("prioridad"));
+        tarea.setEstado(rs.getString("estado"));
+        tarea.setFechaAsignacion(rs.getObject("fecha_asignacion", LocalDate.class));
+        tarea.setFechaVencimiento(rs.getObject("fecha_vencimiento", LocalDate.class));
+        tarea.setProgreso(rs.getInt("progreso"));
+        return tarea;
     }
 }

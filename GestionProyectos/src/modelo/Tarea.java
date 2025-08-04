@@ -3,38 +3,32 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package modelo;
-import java.util.Date;
-/**
- *
- * @author USER
- */
+import java.time.LocalDate;
+
 public class Tarea {
     private int id;
     private String nombre;
     private String descripcion;
-    private int idProyecto; // Relación con Proyecto
-    private Integer idUsuarioAsignado;// Puede ser null
-    private String prioridad; // Baja, Media, Alta
-    private String estado;// Pendiente, En Progreso, Completada,Bloqueada
-    private Date fechaAsignacion;
-    private Date fechaVencimiento;
-    private int progreso;  // 0 a 100%
+    private int idProyecto;
+    private Integer idUsuarioAsignado;
+    private String prioridad;
+    private String estado;
+    private LocalDate fechaAsignacion;
+    private LocalDate fechaVencimiento;
+    private int progreso;
 
     public Tarea() {}
 
-    public Tarea(int id, String nombre, String descripcion, int idProyecto, Integer idUsuarioAsignado, String prioridad, String estado, Date fechaAsignacion, Date fechaVencimiento, int progreso) {
-        this.id = id;
+    public Tarea(String nombre, int idProyecto) {
         this.nombre = nombre;
-        this.descripcion = descripcion;
         this.idProyecto = idProyecto;
-        this.idUsuarioAsignado = idUsuarioAsignado;
-        this.prioridad = prioridad;
-        this.estado = estado;
-        this.fechaAsignacion = fechaAsignacion;
-        this.fechaVencimiento = fechaVencimiento;
-        this.progreso = progreso;
+        this.prioridad = "Media";
+        this.estado = "Pendiente";
+        this.fechaAsignacion = LocalDate.now();
+        this.progreso = 0;
     }
 
+    // Getters y Setters
     public int getId() {
         return id;
     }
@@ -91,19 +85,19 @@ public class Tarea {
         this.estado = estado;
     }
 
-    public Date getFechaAsignacion() {
+    public LocalDate getFechaAsignacion() {
         return fechaAsignacion;
     }
 
-    public void setFechaAsignacion(Date fechaAsignacion) {
+    public void setFechaAsignacion(LocalDate fechaAsignacion) {
         this.fechaAsignacion = fechaAsignacion;
     }
 
-    public Date getFechaVencimiento() {
+    public LocalDate getFechaVencimiento() {
         return fechaVencimiento;
     }
 
-    public void setFechaVencimiento(Date fechaVencimiento) {
+    public void setFechaVencimiento(LocalDate fechaVencimiento) {
         this.fechaVencimiento = fechaVencimiento;
     }
 
@@ -112,11 +106,11 @@ public class Tarea {
     }
 
     public void setProgreso(int progreso) {
-        this.progreso = progreso;
+        this.progreso = Math.max(0, Math.min(100, progreso));
     }
-    
-  @Override
+
+    @Override
     public String toString() {
-        return nombre + " - " + estado + " (" + progreso + "%)";
-    } 
+        return nombre + " (" + progreso + "% - " + estado + ")";
+    }
 }

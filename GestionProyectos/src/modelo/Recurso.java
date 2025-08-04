@@ -3,30 +3,27 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package modelo;
-import java.util.Date;
-/**
- *
- * @author USER
- */
-public class Recursos {
+import java.time.LocalDate;
+
+public class Recurso {
     private int id;
     private String nombreArchivo;
-    private String ruta; // Ruta del archivo en el sistema
-    private int idTarea;// Relación con Tarea
-    private String tipo; // PDF
-    private Date fechaSubida;
+    private String ruta;
+    private Integer idTarea;
+    private String tipo;
+    private LocalDate fechaSubida;
 
-    public Recursos() {}
+    public Recurso() {}
 
-    public Recursos(int id, String nombreArchivo, String ruta, int idTarea, String tipo, Date fechaSubida) {
-        this.id = id;
+    public Recurso(String nombreArchivo, String ruta, Integer idTarea, String tipo) {
         this.nombreArchivo = nombreArchivo;
         this.ruta = ruta;
         this.idTarea = idTarea;
         this.tipo = tipo;
-        this.fechaSubida = fechaSubida;
+        this.fechaSubida = LocalDate.now();
     }
 
+    // Getters y Setters
     public int getId() {
         return id;
     }
@@ -51,11 +48,11 @@ public class Recursos {
         this.ruta = ruta;
     }
 
-    public int getIdTarea() {
+    public Integer getIdTarea() {
         return idTarea;
     }
 
-    public void setIdTarea(int idTarea) {
+    public void setIdTarea(Integer idTarea) {
         this.idTarea = idTarea;
     }
 
@@ -67,20 +64,17 @@ public class Recursos {
         this.tipo = tipo;
     }
 
-    public Date getFechaSubida() {
+    public LocalDate getFechaSubida() {
         return fechaSubida;
     }
 
-    public void setFechaSubida(Date fechaSubida) {
+    public void setFechaSubida(LocalDate fechaSubida) {
         this.fechaSubida = fechaSubida;
     }
-   
-     @Override
+
+    @Override
     public String toString() {
         return nombreArchivo + " (" + tipo + ")";
     }
-    
-    
-    
 }
 
