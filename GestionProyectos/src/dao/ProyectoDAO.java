@@ -13,8 +13,11 @@ import java.util.List;
 
 public class ProyectoDAO {
 
+    /**
+     * Guarda un nuevo proyecto en la base de datos.
+     */
     public void guardar(Proyecto proyecto) throws SQLException {
-        String sql = "INSERT INTO proyecto (nombre, descripcion, fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO proyectos (nombre, descripcion, fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?, ?, ?)";
         
         Connection conn = ConexionDB.conectar();
         if (conn == null) {
@@ -40,8 +43,11 @@ public class ProyectoDAO {
         }
     }
 
+    /**
+     * Obtiene un proyecto por su ID.
+     */
     public Proyecto obtenerPorId(int id) throws SQLException {
-        String sql = "SELECT * FROM proyecto WHERE id = ?";
+        String sql = "SELECT * FROM proyectos WHERE id = ?";
         
         Connection conn = ConexionDB.conectar();
         if (conn == null) {
@@ -61,8 +67,11 @@ public class ProyectoDAO {
         return null;
     }
 
+    /**
+     * Obtiene todos los proyectos de la base de datos.
+     */
     public List<Proyecto> obtenerTodos() throws SQLException {
-        String sql = "SELECT * FROM proyecto";
+        String sql = "SELECT * FROM proyectos";
         List<Proyecto> proyectos = new ArrayList<>();
 
         Connection conn = ConexionDB.conectar();
@@ -81,8 +90,11 @@ public class ProyectoDAO {
         return proyectos;
     }
 
+    /**
+     * Actualiza un proyecto existente en la base de datos.
+     */
     public void actualizar(Proyecto proyecto) throws SQLException {
-        String sql = "UPDATE proyecto SET nombre = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?, estado = ? WHERE id = ?";
+        String sql = "UPDATE proyectos SET nombre = ?, descripcion = ?, fecha_inicio = ?, fecha_fin = ?, estado = ? WHERE id = ?";
         
         Connection conn = ConexionDB.conectar();
         if (conn == null) {
@@ -99,12 +111,18 @@ public class ProyectoDAO {
             pstmt.setString(5, proyecto.getEstado());
             pstmt.setInt(6, proyecto.getId());
 
-            pstmt.executeUpdate();
+            int filasAfectadas = pstmt.executeUpdate();
+            if (filasAfectadas == 0) {
+                throw new SQLException("No se encontró el proyecto con ID: " + proyecto.getId());
+            }
         }
     }
 
+    /**
+     * Elimina un proyecto de la base de datos por su ID.
+     */
     public void eliminar(int id) throws SQLException {
-        String sql = "DELETE FROM proyecto WHERE id = ?";
+        String sql = "DELETE FROM proyectos WHERE id = ?";
         
         Connection conn = ConexionDB.conectar();
         if (conn == null) {
@@ -113,11 +131,18 @@ public class ProyectoDAO {
 
         try (conn;
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             pstmt.setInt(1, id);
-            pstmt.executeUpdate();
+            int filasAfectadas = pstmt.executeUpdate();
+            if (filasAfectadas == 0) {
+                throw new SQLException("No se encontró el proyecto con ID: " + id);
+            }
         }
     }
 
+    /**
+     * Mapea un ResultSet a un objeto Proyecto.
+     */
     private Proyecto mapearProyecto(ResultSet rs) throws SQLException {
         Proyecto proyecto = new Proyecto();
         proyecto.setId(rs.getInt("id"));

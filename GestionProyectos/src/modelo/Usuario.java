@@ -12,12 +12,20 @@ public class Usuario {
     private String rol;
 
     public Usuario() {}
-
+    // ✅ Constructor para nuevos usuarios (sin ID)
     public Usuario(String nombre, String email, String rol) {
         this.nombre = nombre;
         this.email = email;
         this.rol = rol;
     }
+
+    public Usuario(int id, String nombre, String email, String rol) {
+        this.id = id;
+        this.nombre = nombre;
+        this.email = email;
+        this.rol = rol;
+    }
+
 
     // Getters y Setters
     public int getId() {

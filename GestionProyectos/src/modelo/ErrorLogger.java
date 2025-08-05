@@ -10,60 +10,38 @@ public class ErrorLogger {
     private String clase;
     private String metodo;
     private String mensaje;
-    private LocalDateTime fecha;
+    private java.time.LocalDateTime fecha;
 
+    // Constructor vacío
     public ErrorLogger() {}
 
-    public ErrorLogger(String clase, String metodo, String mensaje) {
-        this.clase = clase;
-        this.metodo = metodo;
-        this.mensaje = mensaje;
-        this.fecha = LocalDateTime.now();
-    }
-
-    // Getters y Setters
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
+    // Constructor completo
+    public ErrorLogger(int id, String clase, String metodo, String mensaje, java.time.LocalDateTime fecha) {
         this.id = id;
-    }
-
-    public String getClase() {
-        return clase;
-    }
-
-    public void setClase(String clase) {
         this.clase = clase;
-    }
-
-    public String getMetodo() {
-        return metodo;
-    }
-
-    public void setMetodo(String metodo) {
         this.metodo = metodo;
-    }
-
-    public String getMensaje() {
-        return mensaje;
-    }
-
-    public void setMensaje(String mensaje) {
         this.mensaje = mensaje;
-    }
-
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDateTime fecha) {
         this.fecha = fecha;
     }
 
+    // Getters y Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getClase() { return clase; }
+    public void setClase(String clase) { this.clase = clase; }
+
+    public String getMetodo() { return metodo; }
+    public void setMetodo(String metodo) { this.metodo = metodo; }
+
+    public String getMensaje() { return mensaje; }
+    public void setMensaje(String mensaje) { this.mensaje = mensaje; }
+
+    public java.time.LocalDateTime getFecha() { return fecha; }
+    public void setFecha(java.time.LocalDateTime fecha) { this.fecha = fecha; }
+
     @Override
     public String toString() {
-        return "[" + fecha + "] " + clase + "." + metodo + ": " + mensaje;
+        return "[" + fecha + "] " + clase + "." + metodo + " - " + mensaje;
     }
 }

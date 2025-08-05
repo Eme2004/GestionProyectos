@@ -9,16 +9,15 @@ import util.ConexionDB; // ← Asegúrate de que la clase esté en el paquete 'u
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-/**
- * Clase DAO para gestionar operaciones CRUD de Usuario en la base de datos.
- */
+
+
 public class UsuarioDAO {
 
     /**
      * Guarda un nuevo usuario en la base de datos.
      */
     public void guardar(Usuario usuario) throws SQLException {
-        String sql = "INSERT INTO usuario (nombre, email, rol) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO usuarios (nombre, email, rol) VALUES (?, ?, ?)";
         
         Connection conn = ConexionDB.conectar();
         if (conn == null) {
@@ -35,8 +34,8 @@ public class UsuarioDAO {
             pstmt.executeUpdate();
 
             try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) {
-                    usuario.setId(rs.getInt(1));
+    if (rs.next()) {
+        usuario.setId(rs.getInt(1)); // ← Asigna el ID generado
                 }
             }
         }
@@ -46,7 +45,7 @@ public class UsuarioDAO {
      * Obtiene un usuario por su ID.
      */
     public Usuario obtenerPorId(int id) throws SQLException {
-        String sql = "SELECT * FROM usuario WHERE id = ?";
+        String sql = "SELECT * FROM usuarios WHERE id = ?";
         
         Connection conn = ConexionDB.conectar();
         if (conn == null) {
@@ -70,7 +69,7 @@ public class UsuarioDAO {
      * Obtiene todos los usuarios de la base de datos.
      */
     public List<Usuario> obtenerTodos() throws SQLException {
-        String sql = "SELECT * FROM usuario";
+        String sql = "SELECT * FROM usuarios";
         List<Usuario> usuarios = new ArrayList<>();
 
         Connection conn = ConexionDB.conectar();
@@ -87,6 +86,54 @@ public class UsuarioDAO {
             }
         }
         return usuarios;
+    }
+
+    /**
+     * Actualiza un usuario existente en la base de datos.
+     */
+    public void actualizar(Usuario usuario) throws SQLException {
+        String sql = "UPDATE usuarios SET nombre = ?, email = ?, rol = ? WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, usuario.getNombre());
+            pstmt.setString(2, usuario.getEmail());
+            pstmt.setString(3, usuario.getRol());
+            pstmt.setInt(4, usuario.getId());
+
+            int filasAfectadas = pstmt.executeUpdate();
+            if (filasAfectadas == 0) {
+                throw new SQLException("No se encontró el usuario con ID: " + usuario.getId());
+            }
+        }
+    }
+
+    /**
+     * Elimina un usuario de la base de datos por su ID.
+     */
+    public void eliminar(int id) throws SQLException {
+        String sql = "DELETE FROM usuarios WHERE id = ?";
+        
+        Connection conn = ConexionDB.conectar();
+        if (conn == null) {
+            throw new SQLException("No se pudo establecer conexión con la base de datos.");
+        }
+
+        try (conn;
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, id);
+            int filasAfectadas = pstmt.executeUpdate();
+            if (filasAfectadas == 0) {
+                throw new SQLException("No se encontró el usuario con ID: " + id);
+            }
+        }
     }
 
     /**
