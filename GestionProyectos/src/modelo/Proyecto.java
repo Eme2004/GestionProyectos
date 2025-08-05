@@ -4,17 +4,30 @@
  */
 package modelo;
 import java.time.LocalDate;
+/**
+ *
+ * @author Emesis
+ */
 
+// Clase que representa un Proyecto dentro del sistema de gestión
 public class Proyecto {
-    private int id;
-    private String nombre;
-    private String descripcion;
-    private LocalDate fechaInicio;
-    private LocalDate fechaFin;
-    private String estado;
+    
+    // Atributos del proyecto
+    private int id;                        // Identificador único del proyecto (generalmente autogenerado en la BD)
+    private String nombre;                 // Nombre del proyecto
+    private String descripcion;            // Descripción del proyecto
+    private LocalDate fechaInicio;         // Fecha de inicio del proyecto
+    private LocalDate fechaFin;            // Fecha de finalización del proyecto
+    private String estado;                 // Estado actual del proyecto (ej. "En progreso", "Finalizado", etc.)
 
+    /**
+     * Constructor vacío: útil cuando se quiere instanciar un proyecto sin datos iniciales.
+     */
     public Proyecto() {}
 
+    /**
+     * Constructor con todos los atributos (excepto ID, que puede ser asignado por la base de datos).
+     */
     public Proyecto(String nombre, String descripcion, LocalDate fechaInicio, LocalDate fechaFin, String estado) {
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -23,7 +36,8 @@ public class Proyecto {
         this.estado = estado;
     }
 
-    // Getters y Setters
+    // Métodos getter y setter para acceder/modificar los atributos
+
     public int getId() {
         return id;
     }
@@ -72,6 +86,10 @@ public class Proyecto {
         this.estado = estado;
     }
 
+    /**
+     * Devuelve una representación en texto del proyecto,
+     * útil para mostrarlo en listas o interfaces gráficas.
+     */
     @Override
     public String toString() {
         return nombre + " (" + estado + ")";

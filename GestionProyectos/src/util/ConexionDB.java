@@ -8,6 +8,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
+ * 
+ * @author Emesis
  * Clase encargada de establecer la conexión con la base de datos PostgreSQL
  * Conecta a la base de datos correcta: gestionproyectos
  */

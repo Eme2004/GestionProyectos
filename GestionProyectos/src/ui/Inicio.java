@@ -6,7 +6,7 @@ package ui;
 
 /**
  *
- * @author USER
+ * @author Emesis
  */
 public class Inicio extends javax.swing.JFrame {
 

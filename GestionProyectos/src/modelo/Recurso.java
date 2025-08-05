@@ -4,26 +4,41 @@
  */
 package modelo;
 import java.time.LocalDate;
+/**
+ *
+ * @author Emesis
+ */
 
+// Clase que representa un recurso (archivo) asociado a una tarea dentro del sistema
 public class Recurso {
-    private int id;
-    private String nombreArchivo;
-    private String ruta;
-    private Integer idTarea;
-    private String tipo;
-    private LocalDate fechaSubida;
 
+    // Atributos del recurso
+    private int id;                         // Identificador único del recurso (asignado por la base de datos)
+    private String nombreArchivo;           // Nombre del archivo (ej. "documento.pdf")
+    private String ruta;                    // Ruta donde está almacenado el archivo (en disco o en servidor)
+    private Integer idTarea;                // ID de la tarea a la que está vinculado (puede ser null)
+    private String tipo;                    // Tipo del archivo (ej. "PDF", "Imagen", etc.)
+    private LocalDate fechaSubida;          // Fecha en que se subió el archivo
+
+    /**
+     * Constructor vacío: necesario para frameworks o para inicializar sin parámetros.
+     */
     public Recurso() {}
 
+    /**
+     * Constructor con parámetros básicos.
+     * Asigna la fecha de subida automáticamente al día actual.
+     */
     public Recurso(String nombreArchivo, String ruta, Integer idTarea, String tipo) {
         this.nombreArchivo = nombreArchivo;
         this.ruta = ruta;
         this.idTarea = idTarea;
         this.tipo = tipo;
-        this.fechaSubida = LocalDate.now();
+        this.fechaSubida = LocalDate.now();  // Asignación automática de la fecha actual
     }
 
-    // Getters y Setters
+    // Métodos Getter y Setter para cada atributo
+
     public int getId() {
         return id;
     }
@@ -72,9 +87,11 @@ public class Recurso {
         this.fechaSubida = fechaSubida;
     }
 
+    /**
+     * Representación textual del recurso, útil para mostrar en listas o tablas.
+     */
     @Override
     public String toString() {
         return nombreArchivo + " (" + tipo + ")";
     }
 }
-

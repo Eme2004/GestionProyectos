@@ -6,28 +6,50 @@ package ui;
 import util.ErrorLoggerDAO;
 import dao.*;
 import modelo.*;
-import util.ConexionDB; // Asegúrate de tener esta clase
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 
+ * @author Emesis
+ * Clase principal de la interfaz gráfica del sistema de gestión de proyectos.
+ * 
+ * Esta clase crea una ventana con pestañas para gestionar:
+ * - Usuarios
+ * - Proyectos
+ * - Tareas
+ * - Recursos
+ * - Errores registrados
+ * 
+ * Utiliza Swing para la interfaz y se conecta a una base de datos PostgreSQL.
+ */
 public class InterfazGUI extends JFrame {
+
+    // ================== INSTANCIAS DE LOS DAOs ==================
+    // DAOs (Data Access Objects): Clases que interactúan directamente con la base de datos.
     private final UsuarioDAO usuarioDAO = new UsuarioDAO();
     private final ProyectoDAO proyectoDAO = new ProyectoDAO();
     private final TareaDAO tareaDAO = new TareaDAO();
     private final RecursoDAO recursoDAO = new RecursoDAO();
     private final ErrorLoggerDAO errorDAO = new ErrorLoggerDAO();
+
+    // ================== COMPONENTES GLOBALES ==================
+    // Pestañas principales del sistema
     private final JTabbedPane tabbedPane = new JTabbedPane();
 
     // ================== COMPONENTES USUARIOS ==================
+    // Campos de texto para ingresar datos de usuarios
     private final JTextField txtUsuarioNombre = new JTextField(20);
     private final JTextField txtUsuarioEmail = new JTextField(20);
     private final JTextField txtUsuarioRol = new JTextField(20);
+
+    // Tabla para mostrar los usuarios
     private final JTable tableUsuarios = new JTable();
+    // Modelo de la tabla: define columnas y filas
     private final DefaultTableModel modelUsuarios = new DefaultTableModel(
             new Object[]{"ID", "Nombre", "Email", "Rol"}, 0);
 
@@ -68,12 +90,16 @@ public class InterfazGUI extends JFrame {
     private final DefaultTableModel modelErrores = new DefaultTableModel(
             new Object[]{"ID", "Clase", "Método", "Mensaje", "Fecha"}, 0);
 
+    /**
+     * Constructor de la interfaz gráfica.
+     * Inicializa la ventana, crea las pestañas y carga los datos iniciales.
+     */
     public InterfazGUI() {
         setTitle("📊 Sistema de Gestión de Proyectos");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);
-        setMinimumSize(new Dimension(1000, 600));
-        setLocationRelativeTo(null);
+        setSize(1200, 800); // Tamaño inicial de la ventana
+        setMinimumSize(new Dimension(1000, 600)); // Evita que se haga demasiado pequeña
+        setLocationRelativeTo(null); // Centra la ventana
 
         // Crear pestañas
         crearPestanaUsuarios();
@@ -82,10 +108,13 @@ public class InterfazGUI extends JFrame {
         crearPestanaRecursos();
         crearPestanaErrores();
 
+        // Agregar el contenedor de pestañas a la ventana
         add(tabbedPane);
+
+        // Hacer visible la ventana
         setVisible(true);
 
-        // Cargar datos iniciales
+        // Cargar datos iniciales en todas las tablas
         refrescarUsuarios();
         refrescarProyectos();
         refrescarTareas();
@@ -94,12 +123,18 @@ public class InterfazGUI extends JFrame {
     }
 
     // ================== PESTAÑA USUARIOS ==================
+    /**
+     * Crea la pestaña de gestión de usuarios.
+     * Incluye campos para nombre, email, rol, botones (Agregar, Editar, Eliminar, Refrescar)
+     * y una tabla con todos los usuarios registrados.
+     */
     private void crearPestanaUsuarios() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         int y = 0;
 
+        // Etiquetas y campos de entrada
         panel.add(new JLabel("Nombre:"), gbc(0, y));
         panel.add(txtUsuarioNombre, gbc(1, y++));
         panel.add(new JLabel("Email:"), gbc(0, y));
@@ -107,7 +142,7 @@ public class InterfazGUI extends JFrame {
         panel.add(new JLabel("Rol:"), gbc(0, y));
         panel.add(txtUsuarioRol, gbc(1, y++));
 
-        // Panel de botones
+        // Panel de botones: Agregar, Editar, Eliminar, Refrescar
         JPanel buttonPanel = new JPanel(new FlowLayout());
         JButton btnAgregar = new JButton("Agregar");
         JButton btnEditar = new JButton("Editar");
@@ -118,6 +153,7 @@ public class InterfazGUI extends JFrame {
         buttonPanel.add(btnEliminar);
         buttonPanel.add(btnRefrescar);
 
+        // Posicionar el panel de botones
         gbc.gridx = 0;
         gbc.gridy = y;
         gbc.gridwidth = 2;
@@ -126,7 +162,7 @@ public class InterfazGUI extends JFrame {
         panel.add(buttonPanel, gbc);
         y++;
 
-        // Tabla
+        // Tabla de usuarios con scroll
         JScrollPane scroll = new JScrollPane(tableUsuarios);
         gbc.gridy = y;
         gbc.weightx = 1.0;
@@ -134,8 +170,10 @@ public class InterfazGUI extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         panel.add(scroll, gbc);
 
+        // Asignar el modelo a la tabla
         tableUsuarios.setModel(modelUsuarios);
 
+        // Listener para cuando se selecciona una fila en la tabla
         tableUsuarios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tableUsuarios.getSelectedRow() != -1) {
                 int id = (int) modelUsuarios.getValueAt(tableUsuarios.getSelectedRow(), 0);
@@ -150,36 +188,43 @@ public class InterfazGUI extends JFrame {
             }
         });
 
+        // Agregar la pestaña al contenedor principal
         tabbedPane.addTab("Usuarios", panel);
 
+        // Asignar acciones a los botones
         btnAgregar.addActionListener(e -> guardarUsuario());
         btnEditar.addActionListener(e -> editarUsuario());
         btnEliminar.addActionListener(e -> eliminarUsuario());
         btnRefrescar.addActionListener(e -> refrescarUsuarios());
     }
 
+    /**
+     * Guarda un nuevo usuario en la base de datos.
+     */
     private void guardarUsuario() {
-    try {
-        Usuario u = new Usuario(txtUsuarioNombre.getText(),txtUsuarioEmail.getText(),txtUsuarioRol.getText());
-        usuarioDAO.guardar(u);
-        JOptionPane.showMessageDialog(this, "✅ Usuario guardado con ID: " + u.getId());
-        refrescarUsuarios();
-        limpiarCamposUsuario();
-    } catch (SQLException ex) {
-        JOptionPane.showMessageDialog(this, "❌ Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        try {
+            Usuario u = new Usuario(txtUsuarioNombre.getText(), txtUsuarioEmail.getText(), txtUsuarioRol.getText());
+            usuarioDAO.guardar(u);
+            JOptionPane.showMessageDialog(this, "✅ Usuario guardado con ID: " + u.getId());
+            refrescarUsuarios();
+            limpiarCamposUsuario();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "❌ Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
-}
 
+    /**
+     * Edita el usuario seleccionado en la tabla.
+     */
     private void editarUsuario() {
         int selectedRow = tableUsuarios.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un usuario para editar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         try {
             int id = (int) modelUsuarios.getValueAt(selectedRow, 0);
-            Usuario usuario = new Usuario(id,txtUsuarioNombre.getText(),txtUsuarioEmail.getText(),txtUsuarioRol.getText());
+            Usuario usuario = new Usuario(id, txtUsuarioNombre.getText(), txtUsuarioEmail.getText(), txtUsuarioRol.getText());
             usuarioDAO.actualizar(usuario);
             JOptionPane.showMessageDialog(this, "✅ Usuario actualizado.");
             refrescarUsuarios();
@@ -189,13 +234,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Elimina el usuario seleccionado tras confirmación.
+     */
     private void eliminarUsuario() {
         int selectedRow = tableUsuarios.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un usuario para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int id = (int) modelUsuarios.getValueAt(selectedRow, 0);
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar usuario ID " + id + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -210,8 +257,11 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Actualiza la tabla de usuarios con los datos más recientes de la base de datos.
+     */
     private void refrescarUsuarios() {
-        modelUsuarios.setRowCount(0);
+        modelUsuarios.setRowCount(0); // Limpiar tabla
         try {
             List<Usuario> usuarios = usuarioDAO.obtenerTodos();
             for (Usuario u : usuarios) {
@@ -223,6 +273,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Limpia los campos de entrada de la pestaña de usuarios.
+     */
     private void limpiarCamposUsuario() {
         txtUsuarioNombre.setText("");
         txtUsuarioEmail.setText("");
@@ -230,6 +283,9 @@ public class InterfazGUI extends JFrame {
     }
 
     // ================== PESTAÑA PROYECTOS ==================
+    /**
+     * Crea la pestaña de gestión de proyectos.
+     */
     private void crearPestanaProyectos() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -298,6 +354,9 @@ public class InterfazGUI extends JFrame {
         btnRefrescar.addActionListener(e -> refrescarProyectos());
     }
 
+    /**
+     * Guarda un nuevo proyecto en la base de datos.
+     */
     private void guardarProyecto() {
         try {
             Proyecto p = new Proyecto();
@@ -315,13 +374,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Edita el proyecto seleccionado.
+     */
     private void editarProyecto() {
         int selectedRow = tableProyectos.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un proyecto para editar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         try {
             int id = (int) modelProyectos.getValueAt(selectedRow, 0);
             Proyecto p = new Proyecto();
@@ -340,13 +401,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Elimina el proyecto seleccionado.
+     */
     private void eliminarProyecto() {
         int selectedRow = tableProyectos.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un proyecto para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int id = (int) modelProyectos.getValueAt(selectedRow, 0);
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar proyecto ID " + id + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -361,6 +424,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Actualiza la tabla de proyectos.
+     */
     private void refrescarProyectos() {
         modelProyectos.setRowCount(0);
         try {
@@ -377,6 +443,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Limpia los campos de entrada de proyectos.
+     */
     private void limpiarCamposProyecto() {
         txtProyectoNombre.setText("");
         txtProyectoDescripcion.setText("");
@@ -386,6 +455,9 @@ public class InterfazGUI extends JFrame {
     }
 
     // ================== PESTAÑA TAREAS ==================
+    /**
+     * Crea la pestaña de gestión de tareas.
+     */
     private void crearPestanaTareas() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -463,6 +535,9 @@ public class InterfazGUI extends JFrame {
         btnRefrescar.addActionListener(e -> refrescarTareas());
     }
 
+    /**
+     * Guarda una nueva tarea en la base de datos.
+     */
     private void guardarTarea() {
         try {
             Tarea tarea = new Tarea();
@@ -472,12 +547,10 @@ public class InterfazGUI extends JFrame {
             tarea.setIdUsuarioAsignado((Integer) comboTareaUsuario.getSelectedItem());
             tarea.setPrioridad(txtTareaPrioridad.getText());
             tarea.setEstado(txtTareaEstado.getText());
-
             String fechaStr = txtTareaFechaVencimiento.getText().trim();
             if (!fechaStr.isEmpty()) {
                 tarea.setFechaVencimiento(LocalDate.parse(fechaStr));
             }
-
             tarea.setProgreso(Integer.parseInt(txtTareaProgreso.getText()));
             tareaDAO.guardar(tarea);
             JOptionPane.showMessageDialog(this, "✅ Tarea guardada con ID: " + tarea.getId());
@@ -488,13 +561,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Edita la tarea seleccionada.
+     */
     private void editarTarea() {
         int selectedRow = tableTareas.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona una tarea para editar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         try {
             int id = (int) modelTareas.getValueAt(selectedRow, 0);
             Tarea t = new Tarea();
@@ -505,11 +580,9 @@ public class InterfazGUI extends JFrame {
             t.setIdUsuarioAsignado((Integer) comboTareaUsuario.getSelectedItem());
             t.setPrioridad(txtTareaPrioridad.getText());
             t.setEstado(txtTareaEstado.getText());
-
             String fechaStr = txtTareaFechaVencimiento.getText().trim();
             t.setFechaVencimiento(fechaStr.isEmpty() ? null : LocalDate.parse(fechaStr));
             t.setProgreso(Integer.parseInt(txtTareaProgreso.getText()));
-
             tareaDAO.actualizar(t);
             JOptionPane.showMessageDialog(this, "✅ Tarea actualizada.");
             refrescarTareas();
@@ -519,13 +592,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Elimina la tarea seleccionada.
+     */
     private void eliminarTarea() {
         int selectedRow = tableTareas.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona una tarea para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int id = (int) modelTareas.getValueAt(selectedRow, 0);
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar tarea ID " + id + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -540,6 +615,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Actualiza la tabla de tareas.
+     */
     private void refrescarTareas() {
         modelTareas.setRowCount(0);
         try {
@@ -555,6 +633,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Limpia los campos de entrada de tareas.
+     */
     private void limpiarCamposTarea() {
         txtTareaNombre.setText("");
         txtTareaDescripcion.setText("");
@@ -565,6 +646,9 @@ public class InterfazGUI extends JFrame {
     }
 
     // ================== PESTAÑA RECURSOS ==================
+    /**
+     * Crea la pestaña de gestión de recursos.
+     */
     private void crearPestanaRecursos() {
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -630,6 +714,9 @@ public class InterfazGUI extends JFrame {
         btnRefrescar.addActionListener(e -> refrescarRecursos());
     }
 
+    /**
+     * Sube un nuevo recurso (archivo) al sistema.
+     */
     private void subirRecurso() {
         try {
             Recurso recurso = new Recurso();
@@ -646,13 +733,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Edita el recurso seleccionado.
+     */
     private void editarRecurso() {
         int selectedRow = tableRecursos.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un recurso para editar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         try {
             int id = (int) modelRecursos.getValueAt(selectedRow, 0);
             Recurso r = new Recurso();
@@ -670,13 +759,15 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Elimina el recurso seleccionado.
+     */
     private void eliminarRecurso() {
         int selectedRow = tableRecursos.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Selecciona un recurso para eliminar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int id = (int) modelRecursos.getValueAt(selectedRow, 0);
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar recurso ID " + id + "?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
@@ -691,6 +782,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Actualiza la tabla de recursos.
+     */
     private void refrescarRecursos() {
         modelRecursos.setRowCount(0);
         try {
@@ -706,6 +800,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Limpia los campos de entrada de recursos.
+     */
     private void limpiarCamposRecurso() {
         txtRecursoNombre.setText("");
         txtRecursoRuta.setText("");
@@ -713,6 +810,9 @@ public class InterfazGUI extends JFrame {
     }
 
     // ================== PESTAÑA ERRORES ==================
+    /**
+     * Crea la pestaña de visualización de errores registrados.
+     */
     private void crearPestanaErrores() {
         JPanel panel = new JPanel(new BorderLayout());
         JScrollPane scroll = new JScrollPane(tableErrores);
@@ -724,43 +824,47 @@ public class InterfazGUI extends JFrame {
         btnRefrescar.addActionListener(e -> refrescarErrores());
     }
 
+    /**
+     * Carga todos los errores registrados en la base de datos y los muestra en la tabla.
+     * Incluye manejo de errores si falla la conexión.
+     */
     private void refrescarErrores() {
-    modelErrores.setRowCount(0); // Limpiar tabla
-
-    try {
-        List<ErrorLogger> errores = errorDAO.obtenerTodos();
-        for (ErrorLogger e : errores) {
-            modelErrores.addRow(new Object[]{
-                e.getId(),
-                e.getClase(),
-                e.getMetodo(),
-                e.getMensaje(),
-                e.getFecha()
-            });
+        modelErrores.setRowCount(0); // Limpiar tabla
+        try {
+            List<ErrorLogger> errores = errorDAO.obtenerTodos();
+            for (ErrorLogger e : errores) {
+                modelErrores.addRow(new Object[]{
+                    e.getId(),
+                    e.getClase(),
+                    e.getMetodo(),
+                    e.getMensaje(),
+                    e.getFecha()
+                });
+            }
+            // Si no hay errores, mostrar mensaje informativo
+            if (errores.isEmpty()) {
+                modelErrores.addRow(new Object[]{0, "Sistema", "Inicio", "No hay errores registrados.", java.time.LocalDateTime.now()});
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "❌ Error al cargar errores:\n" + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+            // Mostrar el error en la tabla
+            modelErrores.addRow(new Object[]{0, "Error", "BD", ex.getMessage(), java.time.LocalDateTime.now()});
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "❌ Error inesperado:\n" + ex.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            modelErrores.addRow(new Object[]{0, "Error", "GUI", ex.getMessage(), java.time.LocalDateTime.now()});
         }
-
-        // Mensaje si no hay errores
-        if (errores.isEmpty()) {
-            modelErrores.addRow(new Object[]{0, "Sistema", "Inicio", "No hay errores registrados.", LocalDateTime.now()});
-        }
-
-    } catch (SQLException ex) {
-        JOptionPane.showMessageDialog(this,
-            "❌ Error al cargar errores:\n" + ex.getMessage(),
-            "Error de Base de Datos",
-            JOptionPane.ERROR_MESSAGE);
-        // Agrega un registro de error técnico
-        modelErrores.addRow(new Object[]{0, "Error", "BD", ex.getMessage(), LocalDateTime.now()});
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this,
-            "❌ Error inesperado:\n" + ex.getMessage(),
-            "Error",
-            JOptionPane.ERROR_MESSAGE);
-        modelErrores.addRow(new Object[]{0, "Error", "GUI", ex.getMessage(), LocalDateTime.now()});
     }
-}
 
     // ================== MÉTODOS AUXILIARES ==================
+    /**
+     * Helper para crear un GridBagConstraints con posición (x, y).
+     */
     private GridBagConstraints gbc(int x, int y) {
         GridBagConstraints c = new GridBagConstraints();
         c.gridx = x;
@@ -770,6 +874,9 @@ public class InterfazGUI extends JFrame {
         return c;
     }
 
+    /**
+     * Helper para crear un GridBagConstraints con posición y tamaño.
+     */
     private GridBagConstraints gbc(int x, int y, int w, int h) {
         GridBagConstraints c = gbc(x, y);
         c.gridwidth = w;
@@ -777,7 +884,10 @@ public class InterfazGUI extends JFrame {
         return c;
     }
 
-    // Métodos para actualizar combos
+    // Métodos para actualizar combos (listas desplegables)
+    /**
+     * Actualiza el combo de usuarios en la pestaña de tareas.
+     */
     private void actualizarCombosUsuarios(List<Usuario> usuarios) {
         comboTareaUsuario.removeAllItems();
         for (Usuario u : usuarios) {
@@ -785,6 +895,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Actualiza el combo de proyectos en la pestaña de tareas.
+     */
     private void actualizarCombosProyectos(List<Proyecto> proyectos) {
         comboTareaProyecto.removeAllItems();
         for (Proyecto p : proyectos) {
@@ -792,6 +905,9 @@ public class InterfazGUI extends JFrame {
         }
     }
 
+    /**
+     * Actualiza el combo de tareas en la pestaña de recursos.
+     */
     private void actualizarCombosTareas(List<Recurso> recursos) {
         comboRecursoTarea.removeAllItems();
         for (Recurso r : recursos) {
@@ -802,6 +918,9 @@ public class InterfazGUI extends JFrame {
     }
 
     // ================== EJECUTAR ==================
+    /**
+     * Método principal para iniciar la aplicación.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {
