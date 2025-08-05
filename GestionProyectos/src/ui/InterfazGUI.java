@@ -12,6 +12,14 @@ import java.awt.*;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
+import java.io.IOException;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import java.io.File;
+import java.io.FileOutputStream;
 
 /**
  * 
@@ -24,6 +32,8 @@ import java.util.List;
  * - Tareas
  * - Recursos
  * - Errores registrados
+ * - Generación de informes en PDF
+
  * 
  * Utiliza Swing para la interfaz y se conecta a una base de datos PostgreSQL.
  */
@@ -107,6 +117,7 @@ public class InterfazGUI extends JFrame {
         crearPestanaTareas();
         crearPestanaRecursos();
         crearPestanaErrores();
+        crearPestanaPDF();
 
         // Agregar el contenedor de pestañas a la ventana
         add(tabbedPane);
@@ -822,6 +833,7 @@ public class InterfazGUI extends JFrame {
         tableErrores.setModel(modelErrores);
         tabbedPane.addTab("Errores", panel);
         btnRefrescar.addActionListener(e -> refrescarErrores());
+        
     }
 
     /**
@@ -931,4 +943,197 @@ public class InterfazGUI extends JFrame {
             new InterfazGUI();
         });
     }
+  private void generarInformePDF() {
+    // 1. Mostrar un diálogo para que el usuario elija dónde guardar el archivo PDF
+    JFileChooser fileChooser = new JFileChooser();
+    fileChooser.setDialogTitle("Guardar Informe como PDF");
+    fileChooser.setSelectedFile(new File("Informe_Gestion_Proyectos.pdf")); // Nombre por defecto
+    int userSelection = fileChooser.showSaveDialog(this);
+
+    // Si el usuario cancela, salir del método
+    if (userSelection != JFileChooser.APPROVE_OPTION) {
+        return;
+    }
+
+    // Obtener archivo seleccionado y asegurarse de que tenga extensión .pdf
+    File file = fileChooser.getSelectedFile();
+    if (!file.getName().toLowerCase().endsWith(".pdf")) {
+        file = new File(file.getAbsolutePath() + ".pdf");
+    }
+
+    try {
+        // 2. Crear el documento PDF
+        Document document = new Document();
+        PdfWriter.getInstance(document, new FileOutputStream(file)); // Crear el archivo de salida
+        document.open(); // Abrir el documento para editar
+
+        // 3. Escribir encabezado del informe
+        document.add(new Paragraph("📊 INFORME DE GESTIÓN DE PROYECTOS"));
+        document.add(new Paragraph(" "));
+        document.add(new Paragraph("Generado el: " + java.time.LocalDateTime.now()));
+        document.add(new Paragraph("============================================================"));
+
+        // ========================
+        // Sección de USUARIOS
+        // ========================
+        document.add(new Paragraph(" "));
+        document.add(new Paragraph("👥 USUARIOS REGISTRADOS"));
+        document.add(new Paragraph("------------------------------------------------------------"));
+
+        PdfPTable tableUsuarios = new PdfPTable(4); // Crear tabla con 4 columnas
+        tableUsuarios.setWidthPercentage(100); // Ocupa todo el ancho
+        tableUsuarios.setSpacingBefore(10f);   // Espaciado superior
+        tableUsuarios.setSpacingAfter(10f);    // Espaciado inferior
+
+        // Encabezados de la tabla
+        tableUsuarios.addCell("ID");
+        tableUsuarios.addCell("Nombre");
+        tableUsuarios.addCell("Email");
+        tableUsuarios.addCell("Rol");
+
+        // Obtener usuarios desde la base de datos y agregarlos a la tabla
+        List<Usuario> usuarios = usuarioDAO.obtenerTodos();
+        for (Usuario u : usuarios) {
+            tableUsuarios.addCell(String.valueOf(u.getId()));
+            tableUsuarios.addCell(u.getNombre());
+            tableUsuarios.addCell(u.getEmail());
+            tableUsuarios.addCell(u.getRol());
+        }
+        document.add(tableUsuarios); // Añadir la tabla al documento
+
+        // ========================
+        // Sección de PROYECTOS
+        // ========================
+        document.add(new Paragraph("📁 PROYECTOS"));
+        document.add(new Paragraph("------------------------------------------------------------"));
+
+        PdfPTable tableProyectos = new PdfPTable(6); // Tabla con 6 columnas
+        tableProyectos.setWidthPercentage(100);
+        tableProyectos.setSpacingBefore(10f);
+        tableProyectos.setSpacingAfter(10f);
+
+        tableProyectos.addCell("ID");
+        tableProyectos.addCell("Nombre");
+        tableProyectos.addCell("Descripción");
+        tableProyectos.addCell("Inicio");
+        tableProyectos.addCell("Fin");
+        tableProyectos.addCell("Estado");
+
+        List<Proyecto> proyectos = proyectoDAO.obtenerTodos();
+        for (Proyecto p : proyectos) {
+            tableProyectos.addCell(String.valueOf(p.getId()));
+            tableProyectos.addCell(p.getNombre());
+            tableProyectos.addCell(p.getDescripcion());
+            tableProyectos.addCell(p.getFechaInicio().toString());
+            tableProyectos.addCell(p.getFechaFin().toString());
+            tableProyectos.addCell(p.getEstado());
+        }
+        document.add(tableProyectos);
+
+        // ========================
+        // Sección de TAREAS
+        // ========================
+        document.add(new Paragraph("✅ TAREAS"));
+        document.add(new Paragraph("------------------------------------------------------------"));
+
+        PdfPTable tableTareas = new PdfPTable(7); // Tabla con 7 columnas
+        tableTareas.setWidthPercentage(100);
+        tableTareas.setSpacingBefore(10f);
+        tableTareas.setSpacingAfter(10f);
+
+        tableTareas.addCell("ID");
+        tableTareas.addCell("Nombre");
+        tableTareas.addCell("Proyecto ID");
+        tableTareas.addCell("Usuario ID");
+        tableTareas.addCell("Prioridad");
+        tableTareas.addCell("Estado");
+        tableTareas.addCell("Progreso");
+
+        List<Tarea> tareas = tareaDAO.obtenerTodos();
+        for (Tarea t : tareas) {
+            tableTareas.addCell(String.valueOf(t.getId()));
+            tableTareas.addCell(t.getNombre());
+            tableTareas.addCell(String.valueOf(t.getIdProyecto()));
+            tableTareas.addCell(String.valueOf(t.getIdUsuarioAsignado()));
+            tableTareas.addCell(t.getPrioridad());
+            tableTareas.addCell(t.getEstado());
+            tableTareas.addCell(t.getProgreso() + "%");
+        }
+        document.add(tableTareas);
+
+        // ========================
+        // Sección de RECURSOS
+        // ========================
+        document.add(new Paragraph("📎 RECURSOS"));
+        document.add(new Paragraph("------------------------------------------------------------"));
+
+        PdfPTable tableRecursos = new PdfPTable(5); // Tabla con 5 columnas
+        tableRecursos.setWidthPercentage(100);
+        tableRecursos.setSpacingBefore(10f);
+        tableRecursos.setSpacingAfter(10f);
+
+        tableRecursos.addCell("ID");
+        tableRecursos.addCell("Nombre");
+        tableRecursos.addCell("Ruta");
+        tableRecursos.addCell("Tarea ID");
+        tableRecursos.addCell("Tipo");
+
+        List<Recurso> recursos = recursoDAO.obtenerTodos();
+        for (Recurso r : recursos) {
+            tableRecursos.addCell(String.valueOf(r.getId()));
+            tableRecursos.addCell(r.getNombreArchivo());
+            tableRecursos.addCell(r.getRuta());
+            tableRecursos.addCell(String.valueOf(r.getIdTarea()));
+            tableRecursos.addCell(r.getTipo());
+        }
+        document.add(tableRecursos);
+
+        // 4. Cerrar el documento
+        document.close();
+
+        // Mostrar mensaje de éxito
+        JOptionPane.showMessageDialog(this,
+                "✅ Informe PDF generado con éxito:\n" + file.getAbsolutePath(),
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+
+    } catch (DocumentException | IOException e) {
+        // Errores al crear o guardar el PDF
+        JOptionPane.showMessageDialog(this,
+                "❌ Error al crear el PDF:\n" + e.getMessage(),
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    } catch (SQLException e) {
+        // Errores al obtener datos desde la base de datos
+        JOptionPane.showMessageDialog(this,
+                "❌ Error al obtener datos de la base de datos:\n" + e.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+    }
 }
+  private void crearPestanaPDF() {
+    // Crear un panel con layout centrado
+    JPanel panel = new JPanel(new GridBagLayout());
+    GridBagConstraints gbc = new GridBagConstraints();
+    gbc.insets = new Insets(20, 10, 20, 10); // Margen alrededor del botón
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.anchor = GridBagConstraints.CENTER;
+
+    // Crear el botón para generar el PDF
+    JButton btnGenerarPDF = new JButton("📄 Generar Informe PDF");
+    btnGenerarPDF.setFont(new Font("Arial", Font.BOLD, 14));
+    btnGenerarPDF.setPreferredSize(new Dimension(200, 50));
+
+    // Agregar el botón al panel
+    panel.add(btnGenerarPDF, gbc);
+
+    // Acción del botón: llama al método que genera el PDF
+    btnGenerarPDF.addActionListener(e -> generarInformePDF());
+
+    // Agregar el panel como nueva pestaña al tabbedPane
+    tabbedPane.addTab("PDF", panel);
+    }
+}
+    
